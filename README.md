@@ -1,14 +1,14 @@
-# The Reactive Architecture
+# ReactorKit
 
-The Reactive Architecture is the modern and reactive architecture for Swift application. This repository introduces the basic concept of Reactive Architecture and describes how to build an application using Reactive Architecture.
+ReactorKit is a framework for reactive and unidirectional Swift application architecture. This repository introduces the basic concept of ReactorKit and describes how to build an application using ReactorKit.
 
-You may want to check [Examples](#examples) section first if you'd like to see the actual code.
+You may want to see [Examples](#examples) section first if you'd like to see the actual code.
 
 ---
 
-## ⚠️ Prerelease Stage
+## ⚠️ Prereleasing Stage
 
-This document is currently in prereleasing stage. Everything can be changed in the future. Major changes can be found in the [Changelog](#changelog) section.
+ReactorKit is currently in prereleasing stage. Everything can be changed in the future. Major changes can be found in the [Changelog](#changelog) section.
 
 ---
 
@@ -31,31 +31,37 @@ This document is currently in prereleasing stage. Everything can be changed in t
 
 ## Basic Concept
 
-The Reactive Architecture is a combination of [Presentation Model](https://martinfowler.com/eaaDev/PresentationModel.html) and [Reactive Programming](https://en.wikipedia.org/wiki/Reactive_programming). It uses event stream as a communication method between each layers. For example, user interactions are delivered from the View to the ViewReactor via PublishSubjects. The ViewReactor exposes the output data via Observables.
+ReactorKit is a combination of [Flux](https://facebook.github.io/flux/) and [Reactive Programming](https://en.wikipedia.org/wiki/Reactive_programming). The user actions and the view states are delivered to each layer via observable streams. These streams are unidirectional so the view can only emit actions and the reactor can only emit states.
 
 <p align="center">
-  <img alt="view-viewreactor-model" src="https://cloud.githubusercontent.com/assets/931655/24015671/79e29224-0acc-11e7-9e02-fade44a31ab4.png" width="600">
+  <img alt="flow" src="https://cloud.githubusercontent.com/assets/931655/25073432/a91c1688-2321-11e7-8f04-bf91031a09dd.png" width="600">
 </p>
-
-You can use any kind of reactive programming framework such as [RxSwift](https://github.com/ReactiveX/RxSwift) and [ReactiveSwift](https://github.com/ReactiveCocoa/ReactiveSwift).
 
 ## Layers
 
-The Reactive Architecture separates the responsibility to each layers. The View binds user inputs and output data. The ViewReactor composes and transforms the event streams. The Model represents data. And the Service performs the business logic. Since each layer is independent and self-contained, it is super easy to test.
-
 ### View
 
-*View* displays data. In Reactive Architecture, a ViewController and a Cell are treated as View. The View only defines how to deliver user inputs to the ViewReactor and how to map the ViewReactor's output data to each UI components. It is recommended to not have business logic in the View. Sometimes it is allowed to have business logic for transitions or animations.
+*View* displays data. A view controller and a cell are treated as a view. The view binds user-inputs to the reactor's action stream and the states to each UI components.
 
-### ViewReactor
+```swift
+func bind(reactor: Reactor) {
+  // action
+  refreshButton.rx.tap.map { Reactor.Action.refresh }
+    .bindTo(reactor.action)
+    .addDisposableTo(self.disposeBag)
 
-*ViewReactor* is an UI independent layer which receives user inputs and creates output. The ViewReactor has two types of property: *Input* and *Output*. The Input property represents the exact user input occured in the View. The Input property is formed like `loginButtonDidTap` rather than `login()`. The Output property provides the primitive data so that the View can bind it to the UI components without converting values.
+  // state
+  reactor.state.map { $0.isFollowing }
+    .bindTo(followButton.rx.isSelected)
+    .addDisposableTo(self.disposeBag)
+}
+```
+
+### Reactor
+
+*Reactor* is an UI independent layer which receives user inputs and creates output. The ViewReactor has two types of property: *Input* and *Output*. The Input property represents the exact user input occured in the View. The Input property is formed like `loginButtonDidTap` rather than `login()`. The Output property provides the primitive data so that the View can bind it to the UI components without converting values.
 
 ViewReactor **must not** have the reference of the View instance. However, in order to provide primitive data, ViewReactor knows the indirect information about which values the View needs.
-
-### Model
-
-*Model* only represents data structure. The Model **should not** have any business logic except serialization and deserialization.
 
 ### Service
 
